@@ -1,0 +1,63 @@
+<html>
+    <body>
+        <h1>Computable Metrics Between Chiral Merge Trees</h1>
+        <p>
+            We start with a fairly innocuous question: How do we train a computer to recognize that a group of real-valued, <b>sampled</b> functions is the same, <b>up to a parameterization?</b>  By <b>sampled</b>, we mean that we've evaluated the function at a sequence of numbers in its domain.  For instance, below are 100 samples of the function <b>cos(2 &pi; t)</b> over the interval <b>[0, 4]</b>
+            
+        </p>
+        <img src = "Sampling.svg" width=700>
+        <p> 
+            By <b>parameterization</b>, we mean that the function can be pre-composed with a monotonically increasing function <b>h(x)</b> as <b>f(h(x))</b>.  For instance, the animation below shows 400 samples of different parameterizations of the function 
+        </p>
+
+        <div style="width:100px;">
+            <h3>
+                \[ f(x) = sin(2 \pi x) + x\]
+            </h3>
+        </div>
+        <p>
+            on the interval <b>[0, 1]</b>, composed with different monotonic functions <b>h(x)</b>
+        </p>
+
+
+        <img src = "Parameterization.gif">
+
+        <p>
+            Now stare at this picture of a bunch of sampled functions for a moment, and see if you can sort them into different groups, or "clusters"
+        </p>
+
+        <div style="padding: 100px;">
+            <img src = "TrendingExamplesMixed.svg" width=900>
+        </div>
+
+
+        <p>
+            There are actually 4 distinct clusters, as shown below
+        </p>
+
+        <div style="padding: 100px;">
+            <img src = "TrendingExamples.svg" width=900>
+        </div>
+
+        <p>
+            But how can we train a computer to discover that when all we're given is 400 numbers?
+        </p>
+
+        <HR>
+        <h2>Approach #1: Dynamic Time Warping</h2>
+        <p>
+            One popular numerical approach to compare functions is known as dynamic time warping.  It works to explicitly uncover the optimal parameterization to best align two functions 
+        </p>
+
+        <img src = "DTWExample2.svg">
+
+        
+
+
+
+
+
+    </body>
+
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</html>
