@@ -1,6 +1,7 @@
 import numpy as np
 from ripser import ripser
 from persim import plot_diagrams as plot_dgms
+from persim import bottleneck, bottleneck_matching
 import matplotlib.pyplot as plt
 from scipy import sparse
 
@@ -117,6 +118,38 @@ def make_warp_animation():
         #plot_dgms(H0)
         plt.savefig("Warp{}.png".format(i), bbox_inches='tight', facecolor='white')
 
+def plot_bottleneck():
+    NPeriods = 5
+    NSamples = 400
+    np.random.seed(0)
+
+    t = np.linspace(0, 1, NSamples)**0.6
+    t = (t*(NPeriods+0.5))-0.5
+    x = np.sin(2*np.pi*t) + t + 0.1*np.random.randn(NSamples)
+    I1 = lower_star_filtration(x)
+
+    t = np.linspace(0, 1, NSamples)**3
+    t = (t*(NPeriods+0.5))-0.5
+    y = np.sin(2*np.pi*t) + t + 0.1*np.random.randn(NSamples)
+    I2 = lower_star_filtration(y)
+    
+
+    bdist, matchidx = bottleneck(I1, I2, matching=True)
+
+    plt.figure(figsize=(12, 5))
+    plt.subplot(121)
+    plt.plot(x)
+    plt.plot(y)
+    plt.ylim(-1.5, 6)
+    plt.title("Sampled Functions")
+
+    plt.subplot(122)
+    bottleneck_matching(I1, I2, matchidx)
+    plt.title("Persistence Diagrams + Matching")
+
+    plt.savefig("Bottleneck.svg", bbox_inches='tight')
+
 if __name__ == '__main__':
     #make_filtration_animation()
-    make_warp_animation()
+    #make_warp_animation()
+    plot_bottleneck()

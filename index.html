@@ -2,7 +2,7 @@
     <body>
         <h1>Computable Metrics Between Chiral Merge Trees</h1>
         <p>
-            We start with a fairly innocuous question: How do we train a computer to recognize that a group of real-valued, <b>sampled</b> functions is the same, <b>up to a parameterization?</b>  By <b>sampled</b>, we mean that we've evaluated the function at a sequence of numbers in its domain.  For instance, below are 100 samples of the function <b>cos(2 &pi; t)</b> over the interval <b>[0, 4]</b>
+            We start with a fairly innocuous question: How do we train a computer to recognize that a group of real-valued, <b>sampled</b> functions is the same, <b>up to a parameterization?</b>  By <b>sampled</b>, we mean that we've evaluated the function at a sequence of numbers in its domain.  This is sometimes referred to as a <b>one dimensional time series</b>.  For instance, below are 100 samples of the function <b>cos(2 &pi; t)</b> over the interval <b>[0, 4]</b>
             
         </p>
         <img src = "Sampling.svg" width=700>
@@ -23,7 +23,7 @@
         <img src = "Parameterization.gif">
 
         <p>
-            Now stare at this picture of a bunch of sampled functions for a moment, and see if you can sort them into different groups, or "clusters"
+            Now stare at this picture of a bunch of time series for a moment, and see if you can sort them into different groups, or "clusters," of equivalence classes of time series with a reparameterization as the equivalence relation
         </p>
 
         <div style="padding: 100px;">
@@ -40,29 +40,37 @@
         </div>
 
         <p>
-            But how can we train a computer to discover that when all we're given is 400 numbers?
+            But how can we train a computer to discover that when all we're given is groups of 400 numbers?
         </p>
 
         <HR>
         <h2>Approach #1: Dynamic Time Warping</h2>
         <p>
-            One popular numerical approach to compare functions is known as dynamic time warping.  It works to explicitly uncover the optimal parameterization to best align two functions 
+            One popular numerical approach to compare functions is known as dynamic time warping<SUP>[1]</SUP>.  It explicitly solves for a discrete version of the optimal parameterization to best align two functions known as a "warping path" or "time-ordered correspondence."  One can associate a total cost to this parameterization to measure dissimilarity.
         </p>
 
         <p>
-            Animation goes here
+            The animation below shows an example of applying dynamic time warping to two time series which are the same up to a parameterization.  As you can see, the parameterization matches parts of the functions that are doing the same thing, even when they occur at different times.
         </p>
 
-        Hiroaki Sakoe and Seibi Chiba. Dynamic programming algorithm optimization for spoken word recog-
-nition. IEEE transactions on acoustics, speech, and signal processing, 26(1):43–49, 1978
+        <img src = "DTWExample.gif">
+
+        <p>
+            The problem with this approach, however, is that the cost associated with an optimal parameterization <b>fails to be a metric</b>, as it can violate the triangle inequality.  In this project, we want to devise something that is a metric.
+        </p>
+
+        <p>
+            [1] Hiroaki Sakoe and Seibi Chiba. Dynamic programming algorithm optimization for spoken word recognition. IEEE transactions on acoustics, speech, and signal processing, 26(1):43–49, 1978
+        </p>
+
 
 
 
         <HR>
-            <h2>Approach #2: Persistence Diagrams</h2>
+            <h2>Approach #2: Persistence Diagrams + Bottleneck Distance</h2>
 
             <p>
-                Animation of approach
+                Another tool we can use which is blind to parameterization comes from the field of <a href = "https://www.youtube.com/watch?v=AWoeBzJd7uQ">topological data analysis</a> and is known as a <b>lower star filtration</b>, which is an instance of what's known of as "watershed methods."  We flow water from the bottom of the graph to the top and keep track of the pools that are created.  The moment a pool is created is referred to as a <b>birth event</b>, and the moment it merges with another pool is known as a <b>death event</b>.   Birth events happen when the water reaches a local min, and death events happen when water reaches a local max.  We can record these events in what's known as a <b>persistence diagram</b>, where each point in this diagram corresponds to a pool of water that was on its own for some amount of time, and its death-birth is referred to as its <b>persistence</b>.  The animation below shows the persistence diagram for re-parameterized time series.  
             </p>
 
             <div style="padding: 100px;">
@@ -70,7 +78,7 @@ nition. IEEE transactions on acoustics, speech, and signal processing, 26(1):43�
             </div>
 
             <p>
-                Adding noise does not significantly change highly persistent points.
+                The diagram stays numerically constant over all of the different warps, so it is automatically blind to Adding noise does not significantly change the points of high persistence, though it does add many points with low persistence towards the "diagonal" where birth = death.
             </p>
 
             <div style="padding: 100px;">
@@ -78,18 +86,31 @@ nition. IEEE transactions on acoustics, speech, and signal processing, 26(1):43�
             </div>
 
             <p>
-
+                However, we can devise a metric between persistence diagrams which is <b>stable</b>, in the sense that slight noise does not cause the metric to blow up.  This metric is known as the <b>bottleneck distance</b>, and it is the result of constructing a <a href = "https://mathworld.wolfram.com/PerfectMatching.html">perfect matching</a> between a pair of persistence diagrams and reporting the <b>maximum length edge</b> in this matching.  For instance, here is a perfect matching between the diagrams of two of the time series in the above animation
             </p>
+
+            <img src = "Bottleneck.svg">
+
+            <p>
+                Notice how the maximum length edge is quite small, reflecting that these time series are close to each other even with noise and different parameterizations.
+            </p>
+            <p>
+                It seems like this is a great approach, so what's the downside?  Unfortunately, it's blind to a class of transformations much larger than just re-parameterizations.  It also can't tell a time series from its reflection.  It also gets mixed up with less obvious examples, such as the two below, which have identical persistence diagrams even though they're not simple reflections or re-parameterizations of each other 
+            </p>
+
+            <img src = "MixedUpTimeSeries.svg" width=900>
 
         <HR>
-            <h2>Approach #3: Merge Trees</h2>
+            <h2>Approach #3: (Chiral) Merge Trees</h2>
 
             <p>
-                Nick's video goes here
+                We can devise a structure over our lower star filtrations that's stronger than a persistence diagram and which keeps track of a hierarchy of pairings that happens as connected components merge together.  This structure is known as a <b>merge tree</b>, and it can be defined over topological spaces more general than 1D time series.  The animation below shows a merge tree construction for the union of balls of increasing radius around a collection of points in 2D
             </p>
 
+            <img src = "MergeTreeBarcodes.gif" width=800>
+
             <p>
-                Let's return to the original example.  We can reduce the problem of matching two functions up to a parameterization to matching two objects known as <b>chiral merge trees</b>.  
+                In the case of matching two time series up to a parameterization, though, the merge tree is defined over an interval with a left-right ordering, which induces a left-right ordering on the branches.  This is referred to as a <b>chiral merge tree</b><SUP>[2]</SUP>, and it's the object we will study in this REU.  In these trees, all leaf nodes correspond to local mins, and all internal nodes correspond to local maxes.  Below are what all of the chiral merge trees look like on the original examples.
             </p>
 
 
@@ -97,28 +118,119 @@ nition. IEEE transactions on acoustics, speech, and signal processing, 26(1):43�
 
 
             <p>
-                These trees are more powerful than persistence diagrams.  Unlike persistence diagrams, they can tell apart time series which have been reflected.  They can also tell apart more subtle distances that persistence diagrams are blind to.  Below is an example of two functions that are clearly different, but which have the same persistence diagram.  On the other hand, their merge trees (superimposed on top of the functions) are distinct.
+                As you can see, the heights of the nodes and topology of the trees is equivalent within each class of time series.  These trees are more powerful than persistence diagrams.  Unlike persistence diagrams, they can tell apart time series which have been reflected.  They can also tell apart more subtle distances that persistence diagrams are blind to.  The example we showed before with identical persistence diagrams are now distinct in their merge tree representations:
             </p>
 
             <img src = "MergeTreeSnippets.svg" width=900>
 
+            <p>
+                The problem with this representation, however, is that it's very difficult to compare two merge trees, as we will articulate in the next section.
+            </p>
+
+            <p>
+                [2] Curry, Justin. "The fiber of the persistence map for functions on the interval." Journal of Applied and Computational Topology 2.3 (2018): 301-321.
+            </p>
+
         <HR>
-            <h2>The Holy Grail: Stable, Computable, And Informative Metric</h2>
+            <h2>The Holy Grail: Stable, Computable, And Informative Metric between Merge Trees</h2>
+
+            <p>
+                This REU will be focused on devising a new metric between chiral merge trees, which, as we've outline above, can apply to matching time series.  We would like the metric to satisfy the following 4 properties
+            </p>
 
             <ol>
-                <li>Metric</li>
-                <li>Stable</li>
-                <li>Informative (lower bounded by the bottleneck between persistence diagrams)</li>
-                <li>Computable (there exists a polynomial time algorithm to compute it)</li>
+                <li>It is actually a <b>metric</b>; i.e. it satisfies all metric properties: symmetry, reflexivity, and the triangle inequality</li>
+                <li>It is <b>stable</b>; small perturbations in the time series should lead to small perturbations in the metric</li>
+                <li>It is <b>informative</b>; that is, it is lower bounded by the bottleneck between persistence diagrams, but it is also able to tell apart changes in time series that persistence diagrams are blind to.</li>
+                <li>It is <b>computable</b>; that is, there exists a polynomial time algorithm to compute it</li>
             </ol>
 
             <p>
-                Put table here of existing approaches
+                Surprisingly, a metric and an algorithm to compute it that satisfy all four of the above properties has eluded researchers so far.  The table below shows a few examples of approaches and properties they satisfy
             </p>
 
-            <table>
-                
+            <table border="1">
+                <tr>
+                    <td></td><td><h3>Metric</h3></td><td><h3>Stable</h3></td><td><h3>Informative</h3></td><td><h3>Computable</h3></td>
+                </tr>
+                <tr>
+                    <td>Dynamic Time Warping</td>
+                    <td><h1>❌</h1></td><td>
+                        <h1>✔️</h1></td><td>
+                        <h1>✔️</h1></td><td>
+                        <h1>✔️</h1></td>
+                </tr>
+                <tr>
+                    <td>Persistence Diagrmas + Bottleneck Distance</td>
+                    <td><h1>✔️</h1></td><td>
+                        <h1>✔️</h1></td><td>
+                        <h1>❌</h1></td><td>
+                        <h1>✔️</h1></td>
+                </tr>
+                <tr>
+                    <td>Interleaving Distance between (General) Merge Trees<SUP>[3,4]</SUP></td>
+                    <td><h1>✔️</h1></td><td>
+                        <h1>✔️</h1></td><td>
+                        <h1>✔️</h1></td><td>
+                        <h1>❌</h1></td>
+                </tr>
+                <tr>
+                    <td>Integer Linear Programming Metric between (General) Merge Trees<SUP>[5]</SUP></td>
+                    <td><h1>✔️</h1></td><td>
+                        <h1>✔️</h1></td><td>
+                        <h1>✔️</h1></td><td>
+                        <h1>❌</h1></td>
+                </tr>
+                <tr>
+                    <td>Merge Tree Edit Distance<SUP>[6]</SUP></td>
+                    <td><h1>✔️</h1></td><td>
+                        <h1>❌</h1></td><td>
+                        <h1>✔️</h1></td><td>
+                        <h1>✔️</h1></td>
+                </tr>
+                <tr>
+                    <td>??? (REU Goal for Chiral Merge Trees)</td>
+                    <td><h1>✔️</h1></td><td>
+                        <h1>✔️</h1></td><td>
+                        <h1>✔️</h1></td><td>
+                        <h1>✔️</h1></td>
+                </tr>
+
             </table>
+
+            <p>
+                In this REU, our goal will be to devise a metric on chiral merge trees that satisfies all properties, and then to implement this algorithm in Python and test it on real time series data.
+            </p>
+
+            <p>
+                [3] Morozov, Dmitriy, Kenes Beketayev, and Gunther Weber. "Interleaving distance between merge trees." Discrete and Computational Geometry 49.22-45 (2013): 52.
+            </p>
+            <p>
+                [4] Agarwal, Pankaj K., et al. "Computing the Gromov-Hausdorff distance for metric trees." ACM Transactions on Algorithms (TALG) 14.2 (2018): 1-20.
+            </p>
+            <p>
+                [5] Pegoraro, Matteo. "A Metric for Tree-Like Topological Summaries." arXiv preprint arXiv:2108.13108 (2021).
+            </p>
+            <p>
+                [6] Sridharamurthy, Raghavendra, et al. "Edit distance between merge trees." IEEE transactions on visualization and computer graphics 26.3 (2018): 1518-1531.
+            </p>
+
+            <HR>
+                <h1>Background of Student</h1>
+                <p>
+                    Though this project is more on the math side, it will bring in a mix of math and CS skills, particularly via the focus on computability and implementations.  An ideal student for this project would have the following preparation:
+                </p>
+                <ul>
+                    <li>
+                        Have taken at least one CS course, with preferred experience in data structures and algorithm analysis
+                    </li>
+                    <li>
+                        Having taken at least one of modern geometry, topology, or abstract algebra is a plus.
+                    </li>
+                    <li>
+                        Have a willingness to work at the interface of CS and math and to explore mathematical ideas via coding examples.
+                    </li>
+                </ul>
 
 
     </body>
